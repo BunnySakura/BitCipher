@@ -32,3 +32,8 @@
 
 ## 引用：
 [ThreadPool.h](https://github.com/progschj/ThreadPool "ThreadPool.h")
+
+# 可能会增加的优化：
+##### 1.支持跨平台
+##### 2.优化文件列表获取，目前调用WindowsAPI获取太慢，浪费时间
+##### 3.图形化界面？
