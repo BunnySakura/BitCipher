@@ -1,26 +1,21 @@
-#pragma once
-#include "iostream"
-#include "fstream"
-#include "sstream"
-#include "string"
-#include "io.h"					//在FileProcess.cpp中用于获取目录下文件名
-#include "direct.h"				//在main.cpp中用于创建BitMap目录
-#include <shlobj.h>				//在SelectDirectory.cpp用于开启目录选择窗口
+#ifndef _BitMap_h_
+#define _BitMap_h_
+
+#include <string>
+#include <iostream>
+#include <queue>
+#include <filesystem>
 #include "ThreadPool.h"
 
-using namespace std;
 
-//加密成员函数
-int Encryption(string file_in, string file_out);
-//解密成员函数
-int Decryption(string file_in, string file_out);
-
-
-//文件处理:加密函数
-void FileProcessIn(string file_suffix,string folder_path);
-//文件处理:解密函数
-void FileProcessOut(string file_suffix,string folder_path);
+//文件处理主函数，参数：输出目录、源文件路径
+int FileCryption(const std::string directory_output, const std::string filename);
+//遍历文件路径
+std::queue<std::string> GetFilesName(const std::filesystem::path& path_to_show);
+//测试用
+int UnitTest(char* path);
+//用于字符串分割，参数：待处理字符串、分割字符，返回vector
+const std::vector<std::string> StringSplit(const std::string& str, const std::string& pattern);
 
 
-//目录选择窗口
-string SelectWindow(TCHAR szBuffer[255]);
+#endif // !_BitMap_h_

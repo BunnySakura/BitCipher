@@ -1,54 +1,54 @@
-/*
-1.获取程序当前所在目录
-2.遍历当前目录及子目录所有文件并输出文件绝对路径
-3.确定需要进行的操作:加密/解密
-4.调用"EnAndDecryption"类的Encryption方法进行加密,Decryption方法解密
-  使用for循环遍历进行操作
-*/
-#include"Bitmap.h"
+#include "BitMap.h"
+#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )  //去控制台窗口
 
-int main()
-{
-	cout << "使用方法：将软件放到需要加/解密的文件的同目录下" << endl <<
-		"单个文件最大支持2GB!" << endl <<
-		"不选择保存目录默认保存到软件同目录下的BitMap文件夹!" << endl << endl;
-
-	int i;
-	string file_suffix;
-	string folder_path;
-	TCHAR szBuffer[255] = { 0 };
-	folder_path = SelectWindow(szBuffer) + '\\';
-
-	if (0 != _access(folder_path.c_str(), 0))
-	{
-		// if this folder not exist, create a new one.
-		if (_mkdir(folder_path.c_str()) != 0)return -1;		// 返回 0 表示创建成功，-1 表示失败
-		//换成 ::_mkdir  ::_access 也行，不知道什么意思
+int main(int argc, char** argv) {
+	std::string temp_string;  //用于字符串转换的临时string
+	//判断参数是否符合标准
+	if (argc < 4) {
+		std::cout << "参数不足，请重试！" << std::endl;
+		return -1;
+	}
+	else if (argc == 4) {
+		if (argv[1] == std::string("请选择待处理文件所在路径")) {
+			std::cout << "待处理文件路径禁止默认值！" << std::endl;
+			return 1;
+		}
+		if (argv[2] == std::string("请选择处理后文件保存路径")) {
+			temp_string = std::filesystem::current_path().string();
+			argv[2] = (char*)temp_string.c_str();  //改为当前路径,current_path()可获取当前目录
+			std::cout << "文件保存路径已修改为当前路径：" << argv[2] << std::endl;
+		}
+		if (atoi(argv[3]) < 1 || atoi(argv[3]) > 256) {
+			itoa(4, argv[3], 10);
+			std::cout << "请选择1-256以内的线程数!\n线程数已修改为默认值：4" << std::endl;
+		}
+	}
+	else {
+		std::cout << "奇怪的参数太多了，已经塞不下了！" << std::endl;
+		return -2;
 	}
 
-	cout << "加密请输: 0 ,解密请输: 1 !" << endl;
-	cin >> i;
-	while (i != 0 && i != 1)
+	std::filesystem::path path_name(argv[1]);  //待处理文件所在路径
+	std::queue<std::string> filenames = GetFilesName(path_name);  //包含文件名绝对路径的队列
+
+	const std::string directory_input(argv[1]);  //参数1：待处理文件路径
+	const std::string directory_output(argv[2]);  //参数2：处理后文件路径
+	const int threads_quantity = atoi(argv[3]);  //参数3：线程数
+	std::cout << "待处理文件所在路径：" << argv[1] << std::endl << "处理后文件保存路径：" << argv[2] << std::endl << "使用线程数：" << argv[3] << std::endl;
+
+	ThreadPool pool(threads_quantity);  //生成对应数量减二的线程池，保留线程用于确保程序正常运行
+	std::vector< std::future<int> > results;  //用作多线程调用
+
+	while (!filenames.empty())
 	{
-		cout << "请重新输入！！！" << endl;
-		cin >> i;
+		std::string target_filename(StringSplit(filenames.front(), "\\").back());  //文件名
+		std::string target_dictory(directory_output + (std::string(filenames.front()).erase(0, directory_input.length())));  //处理后文件的绝对路径
+		target_dictory.erase(target_dictory.length() - target_filename.length(), target_filename.length());
+		std::filesystem::create_directories(target_dictory);  //如果处理后文件在子文件夹中且该文件夹不存在，则创建之
+		results.emplace_back(pool.enqueue(FileCryption, target_dictory + target_filename, filenames.front()));
+		//std::this_thread::sleep_for(std::chrono::microseconds(100));  //阻塞当前主线程100ms，避免竞争
+		filenames.pop();
 	}
 
-	cout << endl <<
-		"以小写形式输入文件后缀" << endl <<
-		"如txt,jpg,png,zip,匹配多种格式的通配符‘*’等" << endl <<
-		"完成后请确认文件数量，如果数量不对，那么请重试！！！" << endl;
-	cin >> file_suffix;
-
-	switch (i)
-	{
-	case 0:
-		FileProcessIn(file_suffix, folder_path);
-		break;
-	default:
-		FileProcessOut(file_suffix, folder_path);
-	}
-
-	system("PAUSE");
 	return 0;
 }
